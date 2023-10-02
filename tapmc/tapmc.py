@@ -1,3 +1,5 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import numpy as np
 import pandas as pd
 from neuralforecast.losses.numpy import mape, rmse
@@ -7,8 +9,7 @@ from neuralforecast.models import PatchTST, LSTM
 from neuralforecast.core import NeuralForecast
 import json
 import config as cf
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 
 # from ray import tune
 # from ray.tune.search.hyperopt import HyperOptSearch
