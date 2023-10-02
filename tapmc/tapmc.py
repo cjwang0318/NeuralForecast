@@ -11,6 +11,7 @@ from ray import tune
 # from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
 from ray.tune.search.hyperopt import HyperOptSearch
 import json
+import config as cf
 
 def insert_ds(df):
     uids = df['unique_id'].unique()  # Select ids
@@ -44,57 +45,12 @@ if __name__ == '__main__':
     n_windows = 1
 
 
-    # 模型設定檔
-    config_patchtst = {
-        'input_size': tune.choice([5, 7, 14]),
-        'max_steps': 500,
-        'val_check_steps': tune.choice([20, 30]),
-        'early_stop_patience_steps': tune.choice([3]),
-        'encoder_layers': tune.choice([4, 8, 12]),
-        'dropout': tune.choice([0.2, 0.3]),
-        'head_dropout': tune.choice([0.2, 0.3]),
-        'patch_len': tune.choice([12, 15]),
-        'linear_hidden_size': tune.choice([128, 256]),
-        'attn_dropout': tune.choice([0.2, 0.3]),
-        'hidden_size': tune.choice([128, 256, 512]),
-        'n_heads': tune.choice([8, 16, 32]),
-        'activation': 'gelu',
-        'learning_rate': tune.loguniform(1e-4, 1e-2),
-        'batch_size': tune.choice([2, 4, 8])
-    }
-
-    config_lstm = {
-        'input_size':tune.choice([5, 7, 14]),
-        'max_steps':500,
-        'val_check_steps':tune.choice([20, 30]),
-        'early_stop_patience_steps':tune.choice([3]),
-        'encoder_n_layers':tune.choice([3, 5, 7]),
-        'encoder_dropout':tune.choice([0.1, 0.2]),
-        'decoder_layers':tune.choice([1, 2, 3, 4]),
-        'scaler_type':tune.choice(['standard']),
-        'learning_rate':tune.loguniform(1e-4, 1e-2),
-        'batch_size':tune.choice([256, 512, 1024]),
-        'encoder_hidden_size':tune.choice([128, 256, 512]),
-        'decoder_hidden_size':tune.choice([128, 256, 512])
-        }
-        
-    config_nhits = {
-        "max_steps": 500,  # Number of SGD steps
-        "input_size": tune.choice([5, 7, 14]),  # Size of input window
-        "learning_rate": tune.loguniform(1e-5, 1e-1),  # Initial Learning rate
-        "n_pool_kernel_size": tune.choice([[2, 2, 2], [16, 8, 1], [64, 16, 1]]),  # MaxPool's Kernelsize
-        "n_freq_downsample": tune.choice([[168, 24, 1], [24, 12, 1], [1, 1, 1]]),  # Interpolation expressivity ratios
-        "val_check_steps": tune.choice([20, 30]),  # Compute validation every 50 steps
-        "dropout_prob_theta": tune.choice([0.2, 0.3, 0.4]),
-        "batch_size": tune.choice([32, 64, 128, 256, 512]),
-        "windows_batch_size": tune.choice([128, 256, 512])  # Random seed
-    }
-
+    
 
     # Utilizing Auto-models for parameters tuning by random grid search, and choose the best parameters by cross validation
 
     models = [
-        AutoLSTM(h=horizon, config=config_lstm, loss=MQLoss(), num_samples=20),
+        AutoLSTM(h=horizon, config=cf.config_lstm, loss=MQLoss(), num_samples=20),
         #AutoPatchTST(h=horizon, config=config_patchtst, loss=MQLoss(), num_samples=2),
         #AutoNHITS(h=horizon, config=config_nhits, loss=MQLoss(), num_samples=2)
     ]
