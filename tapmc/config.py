@@ -11,7 +11,7 @@ config_patchtst = {
     'encoder_layers': tune.choice([4, 8, 12]),
     'dropout': tune.choice([0.2, 0.3]),
     'head_dropout': tune.choice([0.2, 0.3]),
-    'patch_len': tune.choice([12, 15]),
+    'patch_len': tune.choice([10, 12]),
     'linear_hidden_size': tune.choice([128, 256]),
     'attn_dropout': tune.choice([0.2, 0.3]),
     'hidden_size': tune.choice([128, 256, 512]),

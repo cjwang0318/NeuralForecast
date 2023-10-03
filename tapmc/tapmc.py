@@ -16,8 +16,6 @@ import config as cf
 
 # import matplotlib.pyplot as plt
 # from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
-def load_data(path):
-    return 0
 
 def insert_ds(df):
     uids = df['unique_id'].unique()  # Select ids
@@ -107,49 +105,53 @@ def model_evaluation(trained_model, resultPath):
 
 
 if __name__ == '__main__':
+    filePath_List=["./dataset/NTU/181697_Top70.csv","./dataset/NTU/566768_Top70.csv","./dataset/NTU/758085_Top70.csv","./dataset/NTU/849886_Top70.csv","./dataset/NTU/890285_Top70.csv"]
+    filePath_List=["./dataset/NTU/test/test.csv","./dataset/NTU/test/test_all.txt"]
     #filePath='./dataset/NTU/181697_Top70.csv'
-    filePath='./dataset/NTU/test/test_all.txt'
-    # ds使用datetime格式
-    # df = pd.read_csv(filePath, header=None, names=["unique_id", "datetime", "y"])
-    # df = df.drop('datetime', axis=1) # where 1 is the axis number (0 for rows and 1 for columns.)
+    #filePath='./dataset/NTU/test/test_all.txt'
+    for filePath in filePath_List:
+        # ds使用datetime格式
+        # df = pd.read_csv(filePath, header=None, names=["unique_id", "datetime", "y"])
+        # df = df.drop('datetime', axis=1) # where 1 is the axis number (0 for rows and 1 for columns.)
 
-    # ds使用datetime格式 -> 連續自然數格式
-    df = pd.read_csv(filePath, header=None, names=["unique_id", "datetime", "y"])
-    df = insert_ds(df)
+        # ds使用datetime格式 -> 連續自然數格式
+        df = pd.read_csv(filePath, header=None, names=["unique_id", "datetime", "y"])
+        df = insert_ds(df)
 
-    # ds使用連續自然數
-    # df = pd.read_csv(filePath,
-    #                  header=None, names=["unique_id", "ds", "y"])
-    # print(df.head())
+        # ds使用連續自然數
+        # df = pd.read_csv(filePath,
+        #                  header=None, names=["unique_id", "ds", "y"])
+        # print(df.head())
 
-    #獲取檔案名稱
-    # file name with extension
-    file_name = os.path.basename(filePath)
-    # file name without extension
-    file_name=os.path.splitext(file_name)[0]
-    print(f"Training: {file_name}")
-    
-    #建立存放結果的資料夾
-    resultPath=f"./result/{file_name}"
-    if not os.path.isdir(resultPath):
-        os.mkdir(resultPath)
-    checkpointsPath=f"./checkpoints/{file_name}"
-    if not os.path.isdir(checkpointsPath):
-        os.mkdir(checkpointsPath)
+        #獲取檔案名稱
+        # file name with extension
+        file_name = os.path.basename(filePath)
+        # file name without extension
+        file_name=os.path.splitext(file_name)[0]
+        print(f"Training: {file_name}")
+        
+        #建立存放結果的資料夾
+        resultPath=f"./result/{file_name}"
+        if not os.path.isdir(resultPath):
+            os.mkdir(resultPath)
+        checkpointsPath=f"./checkpoints/{file_name}"
+        if not os.path.isdir(checkpointsPath):
+            os.mkdir(checkpointsPath)
 
-    # 預測模型
-    modelList = ["LSTM", "PatchTST", "NHITS"]
+        # 預測模型
+        modelList = ["LSTM", "PatchTST", "NHITS"]
 
-    # 預測時間參數
-    horizon = 3
-    # cross_validation 參數
-    n_windows = 1
+        # 預測時間參數
+        horizon = 3
+        # cross_validation 參數
+        n_windows = 1
+        num_samples = 2
 
-    # 訓練模型
-    trained_model = {}
-    for model in modelList:
-        Y_hat_df = model_training(df, horizon, model, n_windows, 2, checkpointsPath)
-        trained_model[model] = Y_hat_df
+        # 訓練模型
+        trained_model = {}
+        for model in modelList:
+            Y_hat_df = model_training(df, horizon, model, n_windows, num_samples, checkpointsPath)
+            trained_model[model] = Y_hat_df
 
-    # 評估模型
-    model_evaluation(trained_model, resultPath)
+        # 評估模型
+        model_evaluation(trained_model, resultPath)
