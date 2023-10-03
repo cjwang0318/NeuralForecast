@@ -16,7 +16,8 @@ import config as cf
 
 # import matplotlib.pyplot as plt
 # from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
-
+def load_data(path):
+    return 0
 
 def insert_ds(df):
     uids = df['unique_id'].unique()  # Select ids
@@ -28,11 +29,12 @@ def insert_ds(df):
         # print(Y_df.shape)
         # print(Y_df.head(20))
         df_return = pd.concat([df_return, df_temp], axis=0, ignore_index=True)
-    # print(df_return.tail())
+    df_return.drop('datetime', inplace=True, axis=1)
+    #print(df_return.tail())
     return df_return
 
 
-def model_training(horizon, model, n_windows, num_samples=2):
+def model_training(df, horizon, model, n_windows, num_samples, checkpointsPath):
     # Utilizing Auto-models for parameters tuning by random grid search, and choose the best parameters by cross validation
     if model == "LSTM":
         models = [AutoLSTM(h=horizon, config=cf.config_lstm,
@@ -63,23 +65,22 @@ def model_training(horizon, model, n_windows, num_samples=2):
 
     # 儲存模型
     # [0] represents the first index of the modes_list, it's AutoLSTM
-    nf.save(path=f'./checkpoints/{model}_day{horizon}',
+    nf.save(path=f'{checkpointsPath}/{model}_day{horizon}',
             model_index=[0], overwrite=True, save_dataset=True)
     # [0] represents the best LSTM parameters by previous training
     best_config = nf.models[0].results.get_best_result().config
     print(f"best_config=\n{best_config}")
-    with open(f'./checkpoints/{model}_day{horizon}/best_{model}_config.json', 'w') as f:
+    with open(f'{checkpointsPath}/{model}_day{horizon}/best_{model}_config.json', 'w') as f:
         f.write(str(best_config))
     return Y_hat_df
 
 
-def model_evaluation(trained_model):
-    path = "./result"
+def model_evaluation(trained_model, resultPath):
+    path = resultPath
     model_list = []
     MAPE_result = []
     RMSE_result = []
-    if not os.path.isdir(path):
-        os.mkdir(path)
+    
     for model in trained_model:
         print(f"Evaluating {model} model")
         Y_hat_df = trained_model.get(model)
@@ -106,21 +107,38 @@ def model_evaluation(trained_model):
 
 
 if __name__ == '__main__':
+    #filePath='./dataset/NTU/181697_Top70.csv'
+    filePath='./dataset/NTU/test/test_all.txt'
     # ds使用datetime格式
-    # df = pd.read_csv('./dataset/NTU/test.csv', header=None, names=["unique_id", "datetime", "y"])
+    # df = pd.read_csv(filePath, header=None, names=["unique_id", "datetime", "y"])
     # df = df.drop('datetime', axis=1) # where 1 is the axis number (0 for rows and 1 for columns.)
 
     # ds使用datetime格式 -> 連續自然數格式
-    # df = pd.read_csv('./dataset/NTU/test.csv', header=None, names=["unique_id", "datetime", "y"])
-    # df = insert_ds(df)
+    df = pd.read_csv(filePath, header=None, names=["unique_id", "datetime", "y"])
+    df = insert_ds(df)
 
     # ds使用連續自然數
-    df = pd.read_csv('./dataset/NTU/test/test_all.txt',
-                     header=None, names=["unique_id", "ds", "y"])
+    # df = pd.read_csv(filePath,
+    #                  header=None, names=["unique_id", "ds", "y"])
     # print(df.head())
 
+    #獲取檔案名稱
+    # file name with extension
+    file_name = os.path.basename(filePath)
+    # file name without extension
+    file_name=os.path.splitext(file_name)[0]
+    print(f"Training: {file_name}")
+    
+    #建立存放結果的資料夾
+    resultPath=f"./result/{file_name}"
+    if not os.path.isdir(resultPath):
+        os.mkdir(resultPath)
+    checkpointsPath=f"./checkpoints/{file_name}"
+    if not os.path.isdir(checkpointsPath):
+        os.mkdir(checkpointsPath)
+
     # 預測模型
-    modelList = ["LSTM"]
+    modelList = ["LSTM", "PatchTST", "NHITS"]
 
     # 預測時間參數
     horizon = 3
@@ -130,8 +148,8 @@ if __name__ == '__main__':
     # 訓練模型
     trained_model = {}
     for model in modelList:
-        Y_hat_df = model_training(horizon, model, n_windows, 2)
+        Y_hat_df = model_training(df, horizon, model, n_windows, 2, checkpointsPath)
         trained_model[model] = Y_hat_df
 
     # 評估模型
-    model_evaluation(trained_model)
+    model_evaluation(trained_model, resultPath)
