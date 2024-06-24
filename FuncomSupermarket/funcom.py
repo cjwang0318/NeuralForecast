@@ -132,7 +132,16 @@ def model_evaluation(trained_model, trained_model_time, horizon, resultPath):
 
 if __name__ == "__main__":
     filePath_List = [
-        "./dataset/2023.csv"
+        # "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_光明店.csv",
+        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_大埔店.csv",
+        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_大墩店.csv",
+        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_朝富店.csv",
+        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_東山店.csv",
+        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_東興店.csv",
+        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_永春店.csv",
+        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_河南店.csv",
+        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_經國店.csv",
+        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_黎明店.csv"
     ]
     # filePath_List=["./dataset/NTU/test/test.csv","./dataset/NTU/test/test_all.txt"]
     # filePath='./dataset/NTU/181697_Top70.csv'
@@ -141,8 +150,7 @@ if __name__ == "__main__":
     # 預測模型
     modelList = ["LSTM", "PatchTST", "NHITS"]
     # 預測時間參數
-    # horizon_for_testing = 3
-    horizon_for_testing = 1
+    horizon_for_testing = 3
 
     # cross_validation 參數
     # n_windows = The number of windows to evaluate
