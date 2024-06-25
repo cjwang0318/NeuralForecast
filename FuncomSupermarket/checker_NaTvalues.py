@@ -23,7 +23,7 @@ def check_for_NaT(df, date_columns):
 
 if __name__ == "__main__":
     # ds使用連續自然數
-    filePath = "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_東山店.csv"
+    filePath = "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_經國店.csv"
     print(filePath)
     df = pd.read_csv(filePath,
                      header=None, skiprows=1, names=["unique_id", "ds", "y"])
