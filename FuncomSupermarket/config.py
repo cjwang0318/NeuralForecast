@@ -50,3 +50,16 @@ config_nhits = {
     "batch_size": tune.choice([32, 64, 128, 256, 512]),
     "windows_batch_size": tune.choice([128, 256, 512])  # Random seed
 }
+
+config_Autoformer = {
+    'input_size': tune.choice([1, 3, 5, 7]),
+    'max_steps': 1000,
+    # 'val_check_steps': tune.choice([20, 30]),
+    # 'early_stop_patience_steps': tune.choice([3]),
+    # 'encoder_layers': tune.choice([2, 4, 8]), 調整這個參數可能會造成無法預測
+    # 'dropout': tune.choice([0.2, 0.3]),
+    'hidden_size': 512,
+    # 'activation': 'gelu',
+    'learning_rate': tune.loguniform(1e-3, 1e-2),
+    # 'batch_size': tune.choice([2, 4, 8])
+}

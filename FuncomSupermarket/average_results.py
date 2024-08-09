@@ -3,7 +3,7 @@ import pandas as pd
 
 # Root directory and file name prefix
 root_dir = './result/'
-dir_prefix = '2023_01_2024_06訂單彙整分店商品週期小資料_'
+dir_prefix = '2023_01_2024_06訂單彙整分店商品週期小資料_線上_'
 suffixes = ['光明店', '大埔店', '大墩店', '朝富店', '東山店',
             '東興店', '永春店', '河南店', '經國店', '黎明店']
 
@@ -38,6 +38,9 @@ for day in days:
     # Round the results to the fourth decimal place
     averages = averages.round({'MAPE': 4, 'RMSE': 4, 'Training_Time': 4})
 
+    # Sort the results by MAPE
+    averages = averages.sort_values(by='MAPE')
+    
     # Display the results
     print(averages.to_string(index=False)+"\n")
     

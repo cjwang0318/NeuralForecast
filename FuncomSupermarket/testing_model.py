@@ -2,7 +2,7 @@ import config as cf
 import json
 from neuralforecast.core import NeuralForecast
 from neuralforecast.models import PatchTST, LSTM
-from neuralforecast.auto import AutoLSTM, AutoPatchTST, AutoNHITS
+from neuralforecast.auto import AutoLSTM, AutoPatchTST, AutoNHITS, AutoAutoformer 
 from neuralforecast.losses.pytorch import MQLoss, MAPE, HuberMQLoss, MAE
 from neuralforecast.losses.numpy import mape, rmse
 import time
@@ -56,6 +56,15 @@ def model_training(df, horizon, model, n_windows, num_samples, checkpointsPath):
             AutoNHITS(
                 h=horizon,
                 config=cf.config_nhits,
+                loss=MQLoss(),
+                num_samples=num_samples,
+            )
+        ]
+    elif model == "Autoformer":
+        models = [
+            AutoAutoformer(
+                h=horizon,
+                config=cf.config_Autoformer,
                 loss=MQLoss(),
                 num_samples=num_samples,
             )
@@ -140,37 +149,19 @@ if __name__ == "__main__":
         # "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_東興店.csv",
         # "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_永春店.csv",
         # "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_河南店.csv",
-        # "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_經國店.csv",
-        # "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_黎明店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線上_光明店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線上_大埔店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線上_大墩店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線上_朝富店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線上_東山店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線上_東興店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線上_永春店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線上_河南店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線上_經國店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線上_黎明店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線下_光明店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線下_大埔店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線下_大墩店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線下_朝富店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線下_東山店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線下_東興店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線下_永春店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線下_河南店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線下_經國店.csv",
-        "./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_線下_黎明店.csv"
+        #"./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_經國店.csv",
+        #"./dataset/2023_01_2024_06訂單彙整分店商品週期小資料_黎明店.csv"
+        "./dataset/store_test.csv"
     ]
     # filePath_List=["./dataset/NTU/test/test.csv","./dataset/NTU/test/test_all.txt"]
     # filePath='./dataset/NTU/181697_Top70.csv'
     # filePath='./dataset/NTU/test/test_all.txt'
 
     # 預測模型
-    modelList = ["LSTM", "PatchTST", "NHITS"]
+    # modelList = ["LSTM", "PatchTST", "NHITS"]
+    modelList = ["Autoformer"]
     # 預測時間參數
-    horizon_for_testing = 3
+    horizon_for_testing = 2
 
     # cross_validation 參數
     # n_windows = The number of windows to evaluate
@@ -179,7 +170,7 @@ if __name__ == "__main__":
     num_samples = 25
 
     for filePath in filePath_List:
-        for horizon in range(1, horizon_for_testing + 1):
+        for horizon in range(2, horizon_for_testing + 1):
             # ds使用datetime格式
             # df = pd.read_csv(filePath, header=None, names=["unique_id", "datetime", "y"])
             # df = df.drop('datetime', axis=1) # where 1 is the axis number (0 for rows and 1 for columns.)
