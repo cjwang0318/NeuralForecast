@@ -1,3 +1,4 @@
+import json
 from ray import tune
 import pandas as pd
 from neuralforecast import NeuralForecast
@@ -23,10 +24,11 @@ def save_and_load_df(cv_df):
     # Save the DataFrame
     cv_df.to_csv('cv_df.csv', index=False)
     # Reload the DataFrame
-    cv_df= pd.read_csv('cv_df.csv')
+    cv_df = pd.read_csv('cv_df.csv')
     # Print the reloaded DataFrame
     # print(cv_df)
     return cv_df
+
 
 config_nhits = {
     # Length of input window
@@ -97,42 +99,68 @@ def get_best_model_forecast(forecasts_df, evaluation_df, metric):
     return df
 
 
+def return_json_result(df):
+    # Reset the `ds` values starting from 1
+    df['ds'] = range(1, len(df) + 1)
+
+    # Round the `best_model` values to 0 decimal places
+    df['best_model'] = df['best_model'].round().astype(int)
+
+    # Extract the `best_model` values as a dictionary with `ds` as the key
+    best_model_dict = df.set_index('ds')['best_model'].to_dict()
+
+    # Convert the dictionary to a JSON string
+    best_model_json = json.dumps(best_model_dict, indent=4)
+
+    # Output the JSON
+    # print(best_model_json)
+
+    return best_model_json
+
+
 def forecasting(horizon, Y_df):
     config_nhits["input_size"] = tune.choice([48, 48*2, 48*3])
     config_lstm["input_size"] = tune.choice([48, 48*2, 48*3])
+    # As a general rule, we recommend setting num_samples higher than 20.
+    num_samples = 20
+
     # print(config_lstm)
     nf = NeuralForecast(
         models=[
             AutoNHITS(h=horizon, config=config_nhits,
-                      loss=MQLoss(), num_samples=2),
+                      loss=MQLoss(), num_samples=num_samples),
             AutoLSTM(h=horizon, config=config_lstm,
-                     loss=MQLoss(), num_samples=2),
+                     loss=MQLoss(), num_samples=num_samples),
         ],
         freq='H'
     )
-    
+
     # Do cross_validation to find best parameters
+    # cutoff: the last datestamp or temporal index for the n_windows. If n_windows = 1, then one unique cuttoff value, if n_windows = 2 then two unique cutoff values.
     cv_df = nf.cross_validation(Y_df, n_windows=2)
-    cv_df.columns = cv_df.columns.str.replace('-median', '')    
+    cv_df.columns = cv_df.columns.str.replace('-median', '')
     # Save the cross_validation results
-    #save_and_load_df(cv_df)
+    # save_and_load_df(cv_df)
 
     # Evaluation forecasting performance
     evaluation_df = accuracy(cv_df, [mse, mae, rmse], agg_by=['unique_id'])
     evaluation_df['best_model'] = evaluation_df.drop(
         columns=['metric', 'unique_id']).idxmin(axis=1)
-    #print(evaluation_df.head())
-    #evaluation_summary(evaluation_df)
-    
+    # print(evaluation_df.head())
+    # evaluation_summary(evaluation_df)
+
     # Create production-ready data frame with the best forecast for every unique_id
     fcst_df = nf.predict()  # must run first: cv_df = nf.cross_validation(Y_df, n_windows=2)
     fcst_df.columns = fcst_df.columns.str.replace('-median', '')
-    #print(fcst_df.head())
+    # print(fcst_df.head())
     prod_forecasts_df = get_best_model_forecast(
         fcst_df, evaluation_df, metric='mse')
-    #print(prod_forecasts_df.head())
-    save_and_load_df(prod_forecasts_df)
+    # print(prod_forecasts_df.head())
+    # save_and_load_df(prod_forecasts_df)
+
+    return_json_result(prod_forecasts_df)
+
 
 if __name__ == "__main__":
     train_data = load_demo_data('../dataset/m4-hourly.parquet')
-    forecasting(48, train_data)
+    forecasting(3, train_data)
