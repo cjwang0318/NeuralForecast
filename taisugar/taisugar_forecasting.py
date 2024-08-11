@@ -148,8 +148,8 @@ def return_json_result(df):
 
 
 def forecasting(horizon, Y_df):
-    config_nhits["input_size"] = tune.choice([3, 6, 12, 24])
-    config_lstm["input_size"] = tune.choice([3, 6, 12, 24])
+    config_nhits["input_size"] = tune.choice([3, 6, 8, 12])
+    config_lstm["input_size"] = tune.choice([3, 6, 8, 12])
     # As a general rule, we recommend setting num_samples higher than 20.
     num_samples = 20
 
@@ -197,6 +197,6 @@ def forecasting(horizon, Y_df):
 if __name__ == "__main__":
     # train_data = load_csv_data('./dataset/test.csv')
     train_data = load_csv_data('./dataset/filtered_data_Seq.csv')
-    forecasting(12, train_data)
+    forecasting(6, train_data)
     # cv_df = pd.read_csv('./result/evaluation_df.csv')
     # evaluation_average(cv_df)
