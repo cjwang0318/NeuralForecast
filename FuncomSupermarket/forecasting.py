@@ -44,6 +44,22 @@ def convert_df2json(json_path, json_output, df):
         json_file.write(pretty_json)
 
 
+def convert_json2df():
+
+    # Extract metadata if needed
+    session_id = json_data.get('sessionID')
+
+    # Extract the main data
+    data_records = json_data['data']
+
+    # Convert the data to a DataFrame
+    df = pd.DataFrame(data_records)
+
+    print(f"Session ID: {session_id}")
+    print("DataFrame:")
+    print(df)
+
+
 def save_and_load_df(cv_df):
     # Save the DataFrame
     cv_df.to_csv('cv_df.csv', index=False)
