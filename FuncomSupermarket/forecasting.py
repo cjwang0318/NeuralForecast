@@ -20,6 +20,30 @@ def load_demo_data(path):
     return Y_df
 
 
+def load_csv_data(filePath):
+    Y_df = pd.read_csv(filePath,
+                       header=None, skiprows=1, names=["unique_id", "ds", "y"])
+    # Y_df['ds'] = pd.to_datetime(Y_df['ds'])
+    # Select 1 ids to make the example faster
+    uids = Y_df['unique_id'].unique()[:1]
+    Y_df = Y_df.query('unique_id in @uids').reset_index(drop=True)
+    # print(Y_df)
+    return Y_df
+
+
+def convert_df2json(json_path, json_output, df):
+    # Convert DataFrame to JSON format
+    json_output["data"] = json.loads(df.to_json(
+        orient='records', indent=4))  # Data as JSON
+
+    # Convert the Python dictionary to a pretty-printed JSON string
+    pretty_json = json.dumps(json_output, indent=4)
+
+    # Write the pretty-printed JSON to a file
+    with open(json_path, 'w') as json_file:
+        json_file.write(pretty_json)
+
+
 def save_and_load_df(cv_df):
     # Save the DataFrame
     cv_df.to_csv('cv_df.csv', index=False)
@@ -162,5 +186,11 @@ def forecasting(horizon, Y_df):
 
 
 if __name__ == "__main__":
-    train_data = load_demo_data('../dataset/m4-hourly.parquet')
-    forecasting(3, train_data)
+    # train_data = load_demo_data('../dataset/m4-hourly.parquet')
+    # forecasting(3, train_data)
+    train_data = load_csv_data('./dataset/store_test.csv')
+
+    sessionID = "abced"
+    json_dict = {"sessionID": sessionID}
+    print(json_dict)
+    convert_df2json("output.json", json_dict, train_data)

@@ -1,31 +1,37 @@
 from flask import Flask, jsonify, request
 from threading import Thread
+from forecasting import forecasting
 import time
 
 app = Flask(__name__)
 
 # Status dictionary to store the status of each request
-status = {"state": "idle"}
+status = {"state": "idle", "result": None}
 
 
-def generate_image():
+def generate_results():
     global status
     status["state"] = "processing"
     # Simulate image generation process
     time.sleep(10)  # Replace this with the actual image generation logic
+    result={"1":1.0, "2":2.0, "3":3.0}
     status["state"] = "complete"
+    status["result"] = result
 
 
-@app.route('/generate_image', methods=['POST'])
-def generate_image_route():
+@app.route('/forecasting', methods=['POST'])
+def forecasting_route():
     global status
     if status["state"] == "processing":
-        return jsonify({"message": "Image generation is already in progress"}), 409
+        return jsonify({"message": "Forecasting is already in progress"}), 409
 
-    thread = Thread(target=generate_image)
+    # Reset result to None before starting new generation
+    status["result"] = None
+
+    thread = Thread(target=generate_results)
     thread.start()
 
-    return jsonify({"message": "Image generation started"}), 202
+    return jsonify({"message": "Forecasting started"}), 202
 
 
 @app.route('/status', methods=['GET'])
