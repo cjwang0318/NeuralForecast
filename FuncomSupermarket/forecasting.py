@@ -7,6 +7,7 @@ from neuralforecast.losses.pytorch import MQLoss
 from datasetsforecast.losses import mse, mae, rmse
 from datasetsforecast.evaluation import accuracy
 import os
+import ray
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
@@ -24,8 +25,8 @@ def load_csv_data(filePath):
     Y_df = pd.read_csv(filePath,
                        header=None, skiprows=1, names=["unique_id", "ds", "y"])
     # Y_df['ds'] = pd.to_datetime(Y_df['ds'])
-    # Select 1 ids to make the example faster
-    uids = Y_df['unique_id'].unique()[:1]
+    # Select 2 ids to make the example faster
+    uids = Y_df['unique_id'].unique()[:2]
     Y_df = Y_df.query('unique_id in @uids').reset_index(drop=True)
     # print(Y_df)
     return Y_df
@@ -64,7 +65,7 @@ def convert_json2df(json_str):
 
 def save_and_load_df(cv_df):
     # Save the DataFrame
-    cv_df.to_csv('cv_df.csv', index=False)
+    cv_df.to_csv('cv_df.csv', index=True)
     # Reload the DataFrame
     cv_df = pd.read_csv('cv_df.csv')
     # Print the reloaded DataFrame
@@ -142,28 +143,31 @@ def get_best_model_forecast(forecasts_df, evaluation_df, metric):
 
 
 def return_json_result(df):
-    # Reset the `ds` values starting from 1
-    df['ds'] = range(1, len(df) + 1)
 
+    # Reset the `ds` values starting from 1 within each unique_id group
+    df['ds'] = df.groupby(df.index).cumcount() + 1
     # Round the `best_model` values to 0 decimal places
     df['best_model'] = df['best_model'].round().astype(int)
 
-    # Extract the `best_model` values as a dictionary with `ds` as the key
-    # best_model_dict = df.set_index('ds')['best_model'].to_dict()
-    # for example [{"ds": 1, "val":608 },{"ds": 2, "val":563},{"ds":3,"val": 520}]
+    # Initialize a list to hold the final output
+    output_list = []
 
-    # Create a list of dictionaries with the required format
-    best_model_dict = df[['ds', 'best_model']].rename(
-        columns={'best_model': 'val'}).to_dict(orient='records')
-    # for example[{"ds": 1, "val": 608}, {"ds": 2, "val": 563}, {"ds": 3, "val": 520}]
+    # Create the desired structure
+    for index, row in df.iterrows():
+        entry = {
+            "unique_id": str(index),
+            "ds": int(row['ds']),
+            "val": int(row['best_model'])
+        }
+        output_list.append(entry)
 
-    # Convert the dictionary to a JSON string
-    #best_model_json = json.dumps(best_model_dict, indent=4)
+    # Convert the list to a JSON string
+    output_json = json.dumps(output_list, separators=(',', ':'))
 
     # Output the JSON
-    # print(best_model_json)
+    #print(output_json)
 
-    return best_model_dict
+    return output_json
 
 
 def forecasting(horizon, Y_df):
@@ -201,32 +205,45 @@ def forecasting(horizon, Y_df):
     fcst_df = nf.predict()  # must run first: cv_df = nf.cross_validation(Y_df, n_windows=2)
     fcst_df.columns = fcst_df.columns.str.replace('-median', '')
     # print(fcst_df.head())
+    
     prod_forecasts_df = get_best_model_forecast(
         fcst_df, evaluation_df, metric='mse')
-    # print(prod_forecasts_df.head())
-    save_and_load_df(prod_forecasts_df)
+    #print(prod_forecasts_df.head())
+    #save_and_load_df(prod_forecasts_df)
 
     best_model_json = return_json_result(prod_forecasts_df)
     return best_model_json
 
 
-def do_forecasting(json_str):
-    sessionID, horizon, data = convert_json2df(json_str)
-    best_model_json = forecasting(horizon, data)
-    return {"sessionID": sessionID, "data": best_model_json}
+def do_forecasting(sessionID, horizon, data):
 
+    #sessionID, horizon, data = convert_json2df(json_str)
+    best_model_json = forecasting(horizon, data)
+    json_str = {"sessionID": sessionID, "data": best_model_json}
+    print(f"{sessionID} is finished")
+    # Failed to connect to GCS within 60 seconds. GCS may have been killed 必需加上下面那行，把ray關閉
+    ray.shutdown()
+    return json.dumps(json_str)
+    # Shutdown any existing Ray cluster
+    
+    
 
 if __name__ == "__main__":
     # train_data = load_demo_data('../dataset/m4-hourly.parquet')
     # forecasting(3, train_data)
 
+    # Generate testing data
     # train_data = load_csv_data('./dataset/store_test.csv')
     # sessionID = "abced"
     # json_dict = {"sessionID": sessionID, "horizon": 3}
     # convert_df2json("output.json", json_dict, train_data)
 
-    # Opening JSON file
+    # Testing forecasting function
     f = open('output.json')
     json_str = json.load(f)
     results = do_forecasting(json_str)
     print(results)
+
+    # cv_df = pd.read_csv('cv_df.csv')
+    # best_model_json = return_json_result(cv_df)
+    # print(best_model_json)
