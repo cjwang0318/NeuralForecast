@@ -57,10 +57,14 @@ def convert_json2df(json_str):
     # Convert the data to a DataFrame
     df = pd.DataFrame(data_records)
 
-    # print(f"Session ID: {session_id}")
-    # print("DataFrame:")
-    # print(df)
-    return session_id, horizon, df
+    # Group by 'unique_id' and count the rows for each 'unique_id'
+    unique_id_counts = df.groupby('unique_id').size().reset_index(name='counts')
+    summary_str = [
+        f"unique_id {row['unique_id']} has {row['counts']} rows" for _, row in unique_id_counts.iterrows()]
+    message = "; ".join(summary_str)
+    # print(message)     
+  
+    return session_id, horizon, df, message
 
 
 def save_and_load_df(cv_df):
@@ -174,7 +178,7 @@ def forecasting(horizon, Y_df):
     config_nhits["input_size"] = tune.choice([2, 7, 14, 28, 56])
     config_lstm["input_size"] = tune.choice([2, 7, 14, 28, 56])
     # As a general rule, we recommend setting num_samples higher than 20.
-    num_samples = 50
+    num_samples = 1
 
     # print(config_lstm)
     nf = NeuralForecast(
@@ -215,12 +219,13 @@ def forecasting(horizon, Y_df):
     return best_model_json
 
 
-def do_forecasting(sessionID, horizon, data):
+def do_forecasting(sessionID, horizon, data, message):
 
     #sessionID, horizon, data = convert_json2df(json_str)
     best_model_json = forecasting(horizon, data)
-    json_str = {"sessionID": sessionID, "data": best_model_json}
-    print(f"{sessionID} is finished")
+    json_str = {"message": message,
+                "sessionID": sessionID, "data": best_model_json}
+    print(f"sessionID={sessionID} is finished...")
     # Failed to connect to GCS within 60 seconds. GCS may have been killed 必需加上下面那行，把ray關閉
     ray.shutdown()
     return json.dumps(json_str)
@@ -241,7 +246,8 @@ if __name__ == "__main__":
     # Testing forecasting function
     f = open('output.json')
     json_str = json.load(f)
-    results = do_forecasting(json_str)
+    sessionID, horizon, data, message = convert_json2df(json_str)
+    results = do_forecasting(sessionID, horizon, data, message)
     print(results)
 
     # cv_df = pd.read_csv('cv_df.csv')

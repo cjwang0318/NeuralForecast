@@ -1,0 +1,12 @@
+dataset/
+FuncomSupermarket/checkpoints/
+FuncomSupermarket/result/
+FuncomSupermarket/dataset/
+FuncomSupermarket/lightning_logs/
+tapmc/checkpoints/
+tapmc/result/
+tapmc/dataset/
+tapmc/lightning_logs/
+taisugar/result/
+taisugar/dataset/
+taisugar/lightning_logs/
