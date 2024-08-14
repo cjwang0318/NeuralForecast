@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from threading import Thread
-from forecasting import do_forecasting
+from forecasting import do_forecasting, convert_json2df
 import time
 import pandas as pd
 
@@ -10,30 +10,12 @@ app = Flask(__name__)
 status = {"state": "idle", "result": None}
 
 
-def convert_json2df(json_str):
-
-    # Extract metadata if needed
-    session_id = json_str.get('sessionID')
-    horizon = json_str.get('horizon')
-
-    # Extract the main data
-    data_records = json_str['data']
-
-    # Convert the data to a DataFrame
-    df = pd.DataFrame(data_records)
-
-    # print(f"Session ID: {session_id}")
-    # print("DataFrame:")
-    # print(df)
-    return session_id, horizon, df
-
-
-def generate_results(sessionID, horizon, data):
+def generate_results(sessionID, horizon, data, message):
     global status
     status["state"] = "processing"
     # Simulate image generation process
     # time.sleep(10)  # Replace this with the actual image generation logic
-    result = do_forecasting(sessionID, horizon, data)
+    result = do_forecasting(sessionID, horizon, data, message)
     status["state"] = "complete"
     status["result"] = result
 
@@ -49,9 +31,10 @@ def forecasting_route():
 
     # Parse JSON data from the request
     json_request = request.get_json()
-    #print(json_request)
-    sessionID, horizon, data = convert_json2df(json_request)
-    thread = Thread(target=generate_results, args=(sessionID, horizon, data))
+    # print(json_request)
+    sessionID, horizon, data, message = convert_json2df(json_request)
+    thread = Thread(target=generate_results, args=(
+        sessionID, horizon, data, message))
     thread.start()
 
     return jsonify({"message": "Forecasting started"}), 202

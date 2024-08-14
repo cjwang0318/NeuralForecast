@@ -8,6 +8,7 @@ from datasetsforecast.losses import mse, mae, rmse
 from datasetsforecast.evaluation import accuracy
 import os
 import ray
+from rest_client import do_update
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
@@ -58,12 +59,13 @@ def convert_json2df(json_str):
     df = pd.DataFrame(data_records)
 
     # Group by 'unique_id' and count the rows for each 'unique_id'
-    unique_id_counts = df.groupby('unique_id').size().reset_index(name='counts')
+    unique_id_counts = df.groupby(
+        'unique_id').size().reset_index(name='counts')
     summary_str = [
         f"unique_id {row['unique_id']} has {row['counts']} rows" for _, row in unique_id_counts.iterrows()]
     message = "; ".join(summary_str)
-    # print(message)     
-  
+    # print(message)
+
     return session_id, horizon, df, message
 
 
@@ -161,7 +163,7 @@ def return_json_result(df):
         entry = {
             "unique_id": str(index),
             "ds": int(row['ds']),
-            "val": int(row['best_model'])
+            "val": 0 if int(row['best_model']) < 0 else int(row['best_model'])
         }
         output_list.append(entry)
 
@@ -169,7 +171,7 @@ def return_json_result(df):
     output_json = json.dumps(output_list, separators=(',', ':'))
 
     # Output the JSON
-    #print(output_json)
+    # print(output_json)
 
     return output_json
 
@@ -209,11 +211,11 @@ def forecasting(horizon, Y_df):
     fcst_df = nf.predict()  # must run first: cv_df = nf.cross_validation(Y_df, n_windows=2)
     fcst_df.columns = fcst_df.columns.str.replace('-median', '')
     # print(fcst_df.head())
-    
+
     prod_forecasts_df = get_best_model_forecast(
         fcst_df, evaluation_df, metric='mse')
-    #print(prod_forecasts_df.head())
-    #save_and_load_df(prod_forecasts_df)
+    # print(prod_forecasts_df.head())
+    # save_and_load_df(prod_forecasts_df)
 
     best_model_json = return_json_result(prod_forecasts_df)
     return best_model_json
@@ -221,17 +223,25 @@ def forecasting(horizon, Y_df):
 
 def do_forecasting(sessionID, horizon, data, message):
 
-    #sessionID, horizon, data = convert_json2df(json_str)
+    # sessionID, horizon, data = convert_json2df(json_str)
     best_model_json = forecasting(horizon, data)
+    # Failed to connect to GCS within 60 seconds. GCS may have been killed 必需加上下面那行，把ray關閉
+    ray.shutdown()
+
     json_str = {"message": message,
                 "sessionID": sessionID, "data": best_model_json}
     print(f"sessionID={sessionID} is finished...")
-    # Failed to connect to GCS within 60 seconds. GCS may have been killed 必需加上下面那行，把ray關閉
-    ray.shutdown()
+
+    # Update Results
+    flag = do_update(json_str)
+    if flag:
+        print(f"sessionID={sessionID} upload to DB is finished...")
+    else:
+        print(f"sessionID={sessionID} upload to DB is failed...")
+
     return json.dumps(json_str)
     # Shutdown any existing Ray cluster
-    
-    
+
 
 if __name__ == "__main__":
     # train_data = load_demo_data('../dataset/m4-hourly.parquet')

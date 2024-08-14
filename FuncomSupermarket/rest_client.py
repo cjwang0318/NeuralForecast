@@ -63,11 +63,22 @@ def update_results(token, json_result):
     url = f"{base_url}{endpoint}"
 
     output = client_send(url, json_result, token)
+    resultCode = output.get("resultCode")
+    if resultCode == "10":
+        return True
+    else:
+        return False
+
+
+def do_update(json_result):
+    token = get_Authorization()
+    flag = update_results(token, json_result)
+    return flag
 
 
 if __name__ == "__main__":
     token = get_Authorization()
-    print(token)
+    # print(token)
     json_result = {"message": "abced", "sessionID": "abced",
                    "data": "[{\"unique_id\":\"11\",\"ds\":1,\"val\":-2},{\"unique_id\":\"11\",\"ds\":2,\"val\":0},{\"unique_id\":\"11\",\"ds\":3,\"val\":-3},{\"unique_id\":\"31\",\"ds\":1,\"val\":70},{\"unique_id\":\"31\",\"ds\":2,\"val\":70},{\"unique_id\":\"31\",\"ds\":3,\"val\":70}]"}
     update_results(token, json_result)
